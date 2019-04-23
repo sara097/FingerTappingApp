@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">FingerTapping</string>
+    <string name="taptwoTest">Test podwójnego klikania</string>
+    <string name="startBtn">Start</string>
+    <string name="browseInfo">Przeglądaj pliki</string>
+</resources>
