@@ -76,14 +76,11 @@ public class TwoTapActivity extends AppCompatActivity {
                         if(counter==0) {
                             firstTime = date.getTime();
                             time = firstTime - firstTime;
+                            System.out.println("aaa "+time);
                             times.add(time);
                             if (x > (width / 2)) { //prawa strona
                                 String toData = time + ";" + 1 +";"+0+"!";
                                 data.append(toData);
-//                                test.put("time",time);
-//                                test.put("valueL", 0);
-//                                test.put("valueR", 10);
-
                                 valL.add(0);
                                 valR.add(10);
 
@@ -91,10 +88,6 @@ public class TwoTapActivity extends AppCompatActivity {
 
                                 String toData = time + ";" + 0 +";"+1+"!";
                                 data.append(toData);
-//                                test.put("time",time);
-//                                test.put("valueL", 10);
-//                                test.put("valueR", 0);
-
                                 valL.add(10);
                                 valR.add(0);
                             }
@@ -102,12 +95,10 @@ public class TwoTapActivity extends AppCompatActivity {
                         else{
                             time = date.getTime() - firstTime;
                             times.add(time);
+                            System.out.println("aaa "+time);
                             if (x > (width / 2)) { //prawa strona
                                 String toData = time + ";" + 10 +";"+0+"!";
                                 data.append(toData);
-//                                test.put("time",time);
-//                                test.put("valueL", 0);
-//                                test.put("valueR", 10);
 
                                 valL.add(0);
                                 valR.add(10);
@@ -116,9 +107,6 @@ public class TwoTapActivity extends AppCompatActivity {
 
                                 String toData = time + ";" + 0 +";"+10+"!";
                                 data.append(toData);
-//                                test.put("time",time);
-//                                test.put("valueL", 10);
-//                                test.put("valueR", 0);
 
                                 valL.add(10);
                                 valR.add(0);
@@ -131,16 +119,14 @@ public class TwoTapActivity extends AppCompatActivity {
                         break;
                     case MotionEvent.ACTION_UP:
                         //wziac czas puszczenia i po ktorej stronie
-
+                        date = new Date();
                         x = event.getX();
                         time = date.getTime() - firstTime;
+                        System.out.println("aaa "+time);
                         times.add(time);
                         if (x > (width / 2)) { //prawa strona
                             String toData = time + ";" + 10 +";"+0+"!";
                             data.append(toData);
-//                            test.put("time",time);
-//                            test.put("valueL", 0);
-//                            test.put("valueR", 10);
 
                             valL.add(0);
                             valR.add(10);
@@ -151,9 +137,6 @@ public class TwoTapActivity extends AppCompatActivity {
 
                             valL.add(10);
                             valR.add(0);
-//                            test.put("time",time);
-//                            test.put("valueL", 10);
-//                            test.put("valueR", 0);
                         }
 
                         counter++;
@@ -219,6 +202,7 @@ public class TwoTapActivity extends AppCompatActivity {
 
 
     }
+
 
 
 }
