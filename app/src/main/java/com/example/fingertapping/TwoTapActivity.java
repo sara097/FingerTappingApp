@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -34,14 +35,27 @@ public class TwoTapActivity extends AppCompatActivity {
     private Date date;
     private long firstTime;
     private long time;
-    private ArrayList<Long> milsLeft = new ArrayList<>();
-    private ArrayList<Long> milsRight = new ArrayList<>();
     private float width;
     private float x;
+    private float y;
     private TextView info;
     private ConstraintLayout layout;
     private StringBuilder data = new StringBuilder(); //string builder przechowujacy dane, ktore mozna nastepnie zapisac do pliku
-    private int counter=0;
+    private int counter = 0;
+    private ImageView leftAim;
+    private ImageView rightAim;
+    private float centreXL;
+    private float centreYL;
+    private float centreXR;
+    private float centreYR;
+
+    private Map<String, Object> test = new HashMap<>();
+    private ArrayList<Long> times = new ArrayList<>();
+    private ArrayList<Integer> valR = new ArrayList<>();
+    private ArrayList<Integer> valL = new ArrayList<>();
+    private ArrayList<Float> left = new ArrayList<>();
+    private ArrayList<Float> right = new ArrayList<>();
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +63,8 @@ public class TwoTapActivity extends AppCompatActivity {
         setContentView(R.layout.activity_two_tap);
 
         info = (TextView) findViewById(R.id.twoTapInfo);
+        leftAim = (ImageView) findViewById(R.id.leftAim);
+        rightAim = (ImageView) findViewById(R.id.rightAim);
         layout = findViewById(R.id.layout);
         layout.setOnTouchListener(handleTouch);
 
@@ -58,54 +74,72 @@ public class TwoTapActivity extends AppCompatActivity {
         width = size.x;
 
 
-
     }
 
+    private float calculateDist(float centreX, float centreY, float x, float y){
+        return (float) Math.sqrt(Math.pow((x-centreX),2)+ Math.pow((y-centreY),2));
+    }
 
     private View.OnTouchListener handleTouch = new View.OnTouchListener() {
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-
+            int[] i = new int[2];
+            rightAim.getLocationInWindow(i);
+            centreXR=i[0]+rightAim.getWidth()/2;
+            centreYR = i[1]-rightAim.getHeight()/4;
+            leftAim.getLocationInWindow(i);
+            centreXL = i[0]+leftAim.getWidth()/2;
+            centreYL = i[1]-leftAim.getHeight()/4;
             if (counter < 20) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         x = event.getX();
+                        System.out.println("lol "+ y + ", "+centreYR+ " , "+centreYL);
+                        y=event.getY();
                         //wziac czas dotkniecia i po ktorej stronie
                         date = new Date();
-                        if(counter==0) {
+                        if (counter == 0) {
                             firstTime = date.getTime();
                             time = firstTime - firstTime;
-                            System.out.println("aaa "+time);
+                            System.out.println("aaa " + time);
                             times.add(time);
                             if (x > (width / 2)) { //prawa strona
-                                String toData = time + ";" + 1 +";"+0+"!";
+                                right.add(calculateDist(centreXR, centreYR, x, y));
+                                left.add((float) -1);
+
+                                String toData = time + ";" + 1 + ";" + 0 + "!";
                                 data.append(toData);
                                 valL.add(0);
                                 valR.add(10);
 
                             } else { //lewa strona
-
-                                String toData = time + ";" + 0 +";"+1+"!";
+                                left.add(calculateDist(centreXL, centreYL, x, y));
+                                right.add((float) -1);
+                                String toData = time + ";" + 0 + ";" + 1 + "!";
                                 data.append(toData);
                                 valL.add(10);
                                 valR.add(0);
                             }
-                        }
-                        else{
+                        } else {
                             time = date.getTime() - firstTime;
                             times.add(time);
-                            System.out.println("aaa "+time);
+                            System.out.println("aaa " + time);
                             if (x > (width / 2)) { //prawa strona
-                                String toData = time + ";" + 10 +";"+0+"!";
+                                right.add(calculateDist(centreXR, centreYR, x, y));
+                                left.add((float) -1);
+                                System.out.println("xdd "+ calculateDist(centreXR, centreYR, x, y));
+                                String toData = time + ";" + 10 + ";" + 0 + "!";
                                 data.append(toData);
 
                                 valL.add(0);
                                 valR.add(10);
 
                             } else { //lewa strona
-
-                                String toData = time + ";" + 0 +";"+10+"!";
+                                left.add(calculateDist(centreXL, centreYL, x, y));
+                                right.add((float) -1);
+                                System.out.println("xdd "+ calculateDist(centreXL, centreYL, x, y));
+                                String toData = time + ";" + 0 + ";" + 10 + "!";
                                 data.append(toData);
 
                                 valL.add(10);
@@ -121,18 +155,22 @@ public class TwoTapActivity extends AppCompatActivity {
                         //wziac czas puszczenia i po ktorej stronie
                         date = new Date();
                         x = event.getX();
+                        y=event.getY();
+                        left.add((float) -1);
+                        right.add((float) -1);
                         time = date.getTime() - firstTime;
-                        System.out.println("aaa "+time);
+                        System.out.println("aaa " + time);
                         times.add(time);
                         if (x > (width / 2)) { //prawa strona
-                            String toData = time + ";" + 10 +";"+0+"!";
+
+                            String toData = time + ";" + 10 + ";" + 0 + "!";
                             data.append(toData);
 
                             valL.add(0);
                             valR.add(10);
                         } else { //lewa strona
 
-                            String toData = time + ";" + 0 +";"+10+"!";
+                            String toData = time + ";" + 0 + ";" + 10 + "!";
                             data.append(toData);
 
                             valL.add(10);
@@ -142,34 +180,33 @@ public class TwoTapActivity extends AppCompatActivity {
                         counter++;
                         break;
                 }
-            } else if (counter==20){
+            } else if (counter == 20) {
                 endOfMeasure();
                 counter++;
             }
-                return true;
+            return true;
 
-            }
+        }
 
     };
 
-    Map<String, Object> test= new HashMap<>();
-    ArrayList<Long> times=new ArrayList<>();
-    ArrayList<Integer> valR=new ArrayList<>();
-    ArrayList<Integer> valL=new ArrayList<>();
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private void endOfMeasure(){
 
-            info.setText("Badanie zakończone!");
-            DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd;HH:mm:ss");
-            Date date = new Date();
-            String fileName = "twoTap;" + dateFormat.format(date);
-            FileSave fileSave = new FileSave(this, fileName, data.toString());
 
-        final String TAG= TwoTapActivity.class.getSimpleName();
+    private void endOfMeasure() {
+
+        info.setText("Badanie zakończone!");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd;HH:mm:ss");
+        Date date = new Date();
+        String fileName = "twoTap;" + dateFormat.format(date);
+        FileSave fileSave = new FileSave(this, fileName, data.toString());
+
+        final String TAG = TwoTapActivity.class.getSimpleName();
         test.put("time", times);
         test.put("valueR", valR);
         test.put("valueL", valL);
-        System.out.println("ehe"+ Arrays.asList(test)); // method 1
+        test.put("distL", left);
+        test.put("distR", right);
+        System.out.println("ehe" + Arrays.asList(test)); // method 1
         db.collection("test")
                 .add(test)
                 .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
@@ -200,9 +237,13 @@ public class TwoTapActivity extends AppCompatActivity {
                     }
                 });
 
-
+       test = new HashMap<>();
+        times = new ArrayList<>();
+        valR = new ArrayList<>();
+        valL = new ArrayList<>();
+        left = new ArrayList<>();
+        right = new ArrayList<>();
     }
-
 
 
 }
