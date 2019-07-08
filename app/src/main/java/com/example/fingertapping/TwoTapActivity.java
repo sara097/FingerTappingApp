@@ -2,6 +2,7 @@ package com.example.fingertapping;
 
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -29,25 +30,19 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class TwoTapActivity extends AppCompatActivity {
 
-    private Date date;
     private long firstTime;
-    private long time;
     private float width;
-    private float x;
     private float y;
     private TextView info;
-    private ConstraintLayout layout;
     private StringBuilder data = new StringBuilder(); //string builder przechowujacy dane, ktore mozna nastepnie zapisac do pliku
     private int counter = 0;
     private ImageView leftAim;
     private ImageView rightAim;
-    private float centreXL;
-    private float centreYL;
-    private float centreXR;
-    private float centreYR;
 
     private Map<String, Object> test = new HashMap<>();
     private ArrayList<Long> times = new ArrayList<>();
@@ -65,13 +60,14 @@ public class TwoTapActivity extends AppCompatActivity {
         info = (TextView) findViewById(R.id.twoTapInfo);
         leftAim = (ImageView) findViewById(R.id.leftAim);
         rightAim = (ImageView) findViewById(R.id.rightAim);
-        layout = findViewById(R.id.layout);
+        ConstraintLayout layout = findViewById(R.id.layout);
         layout.setOnTouchListener(handleTouch);
 
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
         width = size.x;
+
 
 
     }
@@ -84,24 +80,44 @@ public class TwoTapActivity extends AppCompatActivity {
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
+
+            if(counter==1){
+                new CountDownTimer(10000, 1000) {
+
+                    public void onTick(long millisUntilFinished) {
+                        System.out.println("heheszki" + counter);
+                    }
+
+                    public void onFinish() {
+                        if(valL.size()>5)
+                            endOfMeasure();
+
+                    }
+
+                }.start();
+            }
+
+
             int[] i = new int[2];
             rightAim.getLocationInWindow(i);
-            centreXR=i[0]+rightAim.getWidth()/2;
-            centreYR = i[1]-rightAim.getHeight()/4;
+            float centreXR = i[0] + rightAim.getWidth() / 2;
+            float centreYR = i[1] - rightAim.getHeight() / 4;
             leftAim.getLocationInWindow(i);
-            centreXL = i[0]+leftAim.getWidth()/2;
-            centreYL = i[1]-leftAim.getHeight()/4;
-            if (counter < 20) {
+            float centreXL = i[0] + leftAim.getWidth() / 2;
+            float centreYL = i[1] - leftAim.getHeight() / 4;
+
+            if (counter < 2000) {
+                long time;
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        x = event.getX();
-                        System.out.println("lol "+ y + ", "+centreYR+ " , "+centreYL);
-                        y=event.getY();
+                        float x = event.getX();
+                        System.out.println("lol " + y + ", " + centreYR + " , " + centreYL);
+                        y = event.getY();
                         //wziac czas dotkniecia i po ktorej stronie
-                        date = new Date();
+                        Date date = new Date();
                         if (counter == 0) {
                             firstTime = date.getTime();
-                            time = firstTime - firstTime;
+                            time = 0L;
                             System.out.println("aaa " + time);
                             times.add(time);
                             if (x > (width / 2)) { //prawa strona
@@ -128,7 +144,7 @@ public class TwoTapActivity extends AppCompatActivity {
                             if (x > (width / 2)) { //prawa strona
                                 right.add(calculateDist(centreXR, centreYR, x, y));
                                 left.add((float) -1);
-                                System.out.println("xdd "+ calculateDist(centreXR, centreYR, x, y));
+                                System.out.println("xdd " + calculateDist(centreXR, centreYR, x, y));
                                 String toData = time + ";" + 10 + ";" + 0 + "!";
                                 data.append(toData);
 
@@ -138,7 +154,7 @@ public class TwoTapActivity extends AppCompatActivity {
                             } else { //lewa strona
                                 left.add(calculateDist(centreXL, centreYL, x, y));
                                 right.add((float) -1);
-                                System.out.println("xdd "+ calculateDist(centreXL, centreYL, x, y));
+                                System.out.println("xdd " + calculateDist(centreXL, centreYL, x, y));
                                 String toData = time + ";" + 0 + ";" + 10 + "!";
                                 data.append(toData);
 
@@ -155,7 +171,7 @@ public class TwoTapActivity extends AppCompatActivity {
                         //wziac czas puszczenia i po ktorej stronie
                         date = new Date();
                         x = event.getX();
-                        y=event.getY();
+                        y = event.getY();
                         left.add((float) -1);
                         right.add((float) -1);
                         time = date.getTime() - firstTime;
@@ -167,23 +183,24 @@ public class TwoTapActivity extends AppCompatActivity {
                             data.append(toData);
 
                             valL.add(0);
-                            valR.add(10);
+                            valR.add(20);
                         } else { //lewa strona
 
                             String toData = time + ";" + 0 + ";" + 10 + "!";
                             data.append(toData);
 
-                            valL.add(10);
+                            valL.add(20);
                             valR.add(0);
                         }
 
                         counter++;
                         break;
                 }
-            } else if (counter == 20) {
-                endOfMeasure();
-                counter++;
             }
+//            } else if (counter == 20) {
+//               // endOfMeasure();
+//                counter++;
+//            }
             return true;
 
         }
@@ -195,10 +212,10 @@ public class TwoTapActivity extends AppCompatActivity {
     private void endOfMeasure() {
 
         info.setText("Badanie zakończone!");
-        DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd;HH:mm:ss");
-        Date date = new Date();
-        String fileName = "twoTap;" + dateFormat.format(date);
-        FileSave fileSave = new FileSave(this, fileName, data.toString());
+       // DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd;HH:mm:ss");
+       // Date date = new Date();
+      //  String fileName = "twoTap;" + dateFormat.format(date);
+       // FileSave fileSave = new FileSave(this, fileName, data.toString());
 
         final String TAG = TwoTapActivity.class.getSimpleName();
         test.put("time", times);
@@ -206,7 +223,7 @@ public class TwoTapActivity extends AppCompatActivity {
         test.put("valueL", valL);
         test.put("distL", left);
         test.put("distR", right);
-        System.out.println("ehe" + Arrays.asList(test)); // method 1
+        System.out.println("ehe " + Arrays.asList(test)); // method 1
         db.collection("test")
                 .add(test)
                 .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
@@ -222,20 +239,20 @@ public class TwoTapActivity extends AppCompatActivity {
                     }
                 });
 
-        db.collection("test")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Log.d(TAG, document.getId() + " => " + document.getData());
-                            }
-                        } else {
-                            Log.w(TAG, "Error getting documents.", task.getException());
-                        }
-                    }
-                });
+//        db.collection("test")
+//                .get()
+//                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                        if (task.isSuccessful()) {
+//                            for (QueryDocumentSnapshot document : task.getResult()) {
+//                                Log.d(TAG, document.getId() + " => " + document.getData());
+//                            }
+//                        } else {
+//                            Log.w(TAG, "Error getting documents.", task.getException());
+//                        }
+//                    }
+//                });
 
        test = new HashMap<>();
         times = new ArrayList<>();
