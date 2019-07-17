@@ -1,5 +1,8 @@
 package com.example.fingertapping;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -21,44 +24,50 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.TreeMap;
 
-public class TwoTapActivity extends AppCompatActivity {
+@SuppressWarnings("IntegerDivisionInFloatingPointContext")
+public class FingerTappingActivity extends AppCompatActivity {
 
     private static final String TAG = "FingerTapping";
     private long firstTime;
     private float width;
-    //private float y;
     private TextView info;
     private StringBuilder data = new StringBuilder(); //string builder przechowujacy dane, ktore mozna nastepnie zapisac do pliku
     private int counter = 0;
 
     private Map<String, Object> measuredData = new HashMap<>();
     private ArrayList<Long> times = new ArrayList<>();
-    //    private ArrayList<Integer> valR = new ArrayList<>();
-//    private ArrayList<Integer> valL = new ArrayList<>();
     private ArrayList<Integer> sideValue = new ArrayList<>(); // 0 - uniesienie paca, 10 - prawa strona, -10 - lewa strona
     private ArrayList<Float> distanceLeft = new ArrayList<>();
 
     private ArrayList<Float> distanceRight = new ArrayList<>();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    float centreXR;
-    float centreYR;
-    float centreXL;
-    float centreYL;
+    private float centreXR;
+    private float centreYR;
+    private float centreXL;
+    private float centreYL;
+    private ArrayList<CharSequence> userData = new ArrayList<>();
+    private ArrayList<Integer> whichIsShown = new ArrayList<>();
+    private ImageView leftAim;
+    private ImageView rightAim;
+    private TextView twoTapInstruction;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_two_tap);
-
+        Intent intent = getIntent();
+        userData=intent.getCharSequenceArrayListExtra("UserData");
         info = (TextView) findViewById(R.id.twoTapInfo);
-        ImageView leftAim = (ImageView) findViewById(R.id.leftAim);
-        ImageView rightAim = (ImageView) findViewById(R.id.rightAim);
+        leftAim = (ImageView) findViewById(R.id.leftAim);
+        rightAim = (ImageView) findViewById(R.id.rightAim);
+        twoTapInstruction =  (TextView) findViewById(R.id.twoTapInstruction);
         ConstraintLayout layout = findViewById(R.id.layout);
         layout.setOnTouchListener(handleTouch);
 
@@ -80,14 +89,36 @@ public class TwoTapActivity extends AppCompatActivity {
     private float calculateDist(float centreX, float centreY, float x, float y) {
         return (float) Math.sqrt(Math.pow((x - centreX), 2) + Math.pow((y - centreY), 2));
     }
-
+    private long tempMills=10000;
+    private boolean flag = true;
     private View.OnTouchListener handleTouch = new View.OnTouchListener() {
+        @SuppressLint("ClickableViewAccessibility")
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             if (counter == 1) {
+                leftAim.setVisibility(View.INVISIBLE);
+                rightAim.setVisibility(View.INVISIBLE);
                 new CountDownTimer(10000, 1000) {
                     public void onTick(long millisUntilFinished) {
-                        System.out.println("heheszki" + counter);
+                        if(millisUntilFinished< tempMills-200){
+                            flag = !flag;
+                            if(flag) twoTapInstruction.setTextColor(Color.BLUE);
+                            else twoTapInstruction.setTextColor(Color.BLACK);
+
+                        leftAim.setVisibility(View.INVISIBLE);
+                        rightAim.setVisibility(View.INVISIBLE);
+                        Random r = new Random();
+                        int i1 = r.nextInt(2);
+                        System.out.println("heheszki" + millisUntilFinished+"aaaaa"+i1);
+                        if(i1 == 1){ //lewa
+                                leftAim.setVisibility(View.VISIBLE);
+                                whichIsShown.add(-1);
+                        }else { //prawa
+                                rightAim.setVisibility(View.VISIBLE);
+                                whichIsShown.add(1);
+                        }
+                        tempMills=millisUntilFinished;
+                    }
                     }
 
                     public void onFinish() {
@@ -96,7 +127,6 @@ public class TwoTapActivity extends AppCompatActivity {
                 }.start();
             }
 
-            //   if (counter < 2000) {
             long time;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -107,7 +137,6 @@ public class TwoTapActivity extends AppCompatActivity {
                     if (counter == 0) {
                         firstTime = date.getTime();
                         time = 0L;
-                        System.out.println("aaa " + time);
                         times.add(time);
                         if (x > (width / 2)) { //prawa strona
                             float distance = calculateDist(centreXR, centreYR, x, y);
@@ -116,8 +145,6 @@ public class TwoTapActivity extends AppCompatActivity {
                             String toData = time + ";" + 10 + ";" + distance + ";" + "-1" + "!";
                             data.append(toData);
                             sideValue.add(10);
-                            // valL.add(0);
-                            // valR.add(10);
 
                         } else { //lewa strona
                             float distance = calculateDist(centreXL, centreYL, x, y);
@@ -126,8 +153,6 @@ public class TwoTapActivity extends AppCompatActivity {
                             String toData = time + ";" + "-10" + ";" + "-1" + ";" + distance + "!";
                             data.append(toData);
                             sideValue.add(-10);
-                            // valL.add(10);
-                            // valR.add(0);
                         }
                     } else {
                         time = date.getTime() - firstTime;
@@ -139,9 +164,6 @@ public class TwoTapActivity extends AppCompatActivity {
                             String toData = time + ";" + 10 + ";" + distance + ";" + "-1" + "!";
                             data.append(toData);
                             sideValue.add(10);
-//                                valL.add(0);
-//                                valR.add(10);
-
                         } else { //lewa strona
                             float distance = calculateDist(centreXL, centreYL, x, y);
                             distanceLeft.add(distance);
@@ -149,8 +171,6 @@ public class TwoTapActivity extends AppCompatActivity {
                             String toData = time + ";" + "-10" + ";" + "-1" + ";" + distance + "!";
                             data.append(toData);
                             sideValue.add(-10);
-//                                valL.add(10);
-//                                valR.add(0);
                         }
                     }
 
@@ -159,37 +179,17 @@ public class TwoTapActivity extends AppCompatActivity {
 
                     break;
                 case MotionEvent.ACTION_UP:
-                    //wziac czas puszczenia i po ktorej stronie
                     date = new Date();
-                   // x = event.getX();
-                   // y = event.getY();
                     distanceLeft.add((float) -1);
                     distanceRight.add((float) -1);
                     time = date.getTime() - firstTime;
                     times.add(time);
-                   // if (x > (width / 2)) { //prawa strona
-                        String toData = time + ";" + "0" + ";" + "-1" + ";" +"-1" + "!";
-                        data.append(toData);
-                        sideValue.add(0);
-//                            valL.add(0);
-//                            valR.add(20);
-//                    } else { //lewa strona
-//
-//                        String toData = time + ";" + "0" + ";" + "-1" + ";" +"-1" + "!";
-//                        data.append(toData);
-//                        sideValue.add(0);
-////                            valL.add(20);
-////                            valR.add(0);
-//                    }
-
+                    String toData = time + ";" + "0" + ";" + "-1" + ";" + "-1" + "!";
+                    data.append(toData);
+                    sideValue.add(0);
                     counter++;
                     break;
             }
-            // }
-//            } else if (counter == 20) {
-//               // endOfMeasure();
-//                counter++;
-//            }
             return true;
 
         }
@@ -199,18 +199,19 @@ public class TwoTapActivity extends AppCompatActivity {
 
     private void endOfMeasure() {
 
-        info.setText("Badanie zakończone!");
-        DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd;HH:mm:ss");
+        info.setText(getString(R.string.endOfMeasure));
+        @SuppressLint("SimpleDateFormat") DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd;HH:mm:ss");
         Date date = new Date();
         String fileName = "measurement " + dateFormat.format(date);
+        data.append(userData.toString());
         new FileSave(this, fileName, data.toString());
 
         measuredData.put("time", times);
         measuredData.put("sideValue", sideValue);
-//        test.put("valueR", valR);
-//        test.put("valueL", valL);
         measuredData.put("distL", distanceLeft);
         measuredData.put("distR", distanceRight);
+        measuredData.put("user data", userData);
+        measuredData.put("shownAim", whichIsShown);
 
         db.collection(fileName)
                 .add(measuredData)
@@ -227,29 +228,15 @@ public class TwoTapActivity extends AppCompatActivity {
                     }
                 });
 
-//        db.collection("test")
-//                .get()
-//                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-//                    @Override
-//                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-//                        if (task.isSuccessful()) {
-//                            for (QueryDocumentSnapshot document : task.getResult()) {
-//                                Log.d(TAG, document.getId() + " => " + document.getData());
-//                            }
-//                        } else {
-//                            Log.w(TAG, "Error getting documents.", task.getException());
-//                        }
-//                    }
-//                });
+
 
         measuredData = new HashMap<>();
         times = new ArrayList<>();
         sideValue = new ArrayList<>();
-//        valR = new ArrayList<>();
-//        valL = new ArrayList<>();
         distanceLeft = new ArrayList<>();
         distanceRight = new ArrayList<>();
-        data= new StringBuilder();
+        data = new StringBuilder();
+        whichIsShown=new ArrayList<>();
     }
 
 

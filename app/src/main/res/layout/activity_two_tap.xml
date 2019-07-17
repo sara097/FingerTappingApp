@@ -5,7 +5,7 @@
     android:id="@+id/layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".TwoTapActivity">
+    tools:context=".FingerTappingActivity">
 
     <TextView
         android:id="@+id/twoTapInstruction"
@@ -15,7 +15,7 @@
         android:layout_marginTop="40dp"
         android:layout_marginEnd="163dp"
         android:layout_marginBottom="41dp"
-        android:text="Klikaj na zmiane palcem wskazującym w lewą część ekranu a palcem w środkowym prawą około 20 razy."
+        android:text="Klikaj w wyświetlony cel. Pomiar rozpocznie się po dwukrotnym kliknięciu."
         android:textColor="@android:color/background_dark"
         android:textSize="24sp"
         app:layout_constraintBottom_toTopOf="@+id/divider2"

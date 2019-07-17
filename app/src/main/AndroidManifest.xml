@@ -13,6 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".UserDataActivity"></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,9 +24,7 @@
         <activity
             android:name=".BrowseActivity"
             android:screenOrientation="portrait" />
-        <activity
-            android:name=".TwoTapActivity">
-        </activity>
+        <activity android:name=".FingerTappingActivity"></activity>
     </application>
 
 </manifest>
